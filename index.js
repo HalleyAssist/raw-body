@@ -14,7 +14,7 @@
 
 var bytes = require('bytes')
 var createError = require('http-errors')
-var iconv = require('iconv-lite')
+var iconv = require('iconv')
 var unpipe = require('unpipe')
 
 /**
@@ -42,10 +42,10 @@ function getDecoder (encoding) {
   if (!encoding) return null
 
   try {
-    return iconv.getDecoder(encoding)
+    return new iconv.Iconv(encoding, "UTF-8")//iconv.getDecoder(encoding)
   } catch (e) {
     // error getting decoder
-    if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
+    //if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
 
     // the encoding was not found
     throw createError(415, 'specified encoding unsupported', {
