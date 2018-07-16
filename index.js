@@ -186,6 +186,12 @@ function readStream (stream, encoding, length, limit, callback) {
     ? ''
     : []
 
+  if(decoder){
+    decoder.on("data", function(chunk){
+      buffer += chunk
+    })
+  }
+
   // attach listeners
   stream.on('aborted', onAborted)
   stream.on('close', cleanup)
@@ -249,7 +255,9 @@ function readStream (stream, encoding, length, limit, callback) {
         type: 'entity.too.large'
       }))
     } else if (decoder) {
-      buffer += decoder.write(chunk)
+      if(!decoder.write(chunk)){
+        done(createError(400, 'unable to decode', { type: 'unable.to.decode'}))
+      }
     } else {
       buffer.push(chunk)
     }
