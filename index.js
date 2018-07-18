@@ -25,13 +25,6 @@ var unpipe = require('unpipe')
 module.exports = getRawBody
 
 /**
- * Module variables.
- * @private
- */
-
-var ICONV_ENCODING_MESSAGE_REGEXP = /^Encoding not recognized: /
-
-/**
  * Get the decoder for a given encoding.
  *
  * @param {string} encoding
@@ -42,7 +35,7 @@ function getDecoder (encoding) {
   if (!encoding) return null
 
   try {
-    return new iconv.Iconv(encoding, "UTF-8")//iconv.getDecoder(encoding)
+    return new iconv.Iconv(encoding, 'UTF-8') // iconv.getDecoder(encoding)
   } catch (e) {
     // error getting decoder
     //if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
@@ -186,8 +179,8 @@ function readStream (stream, encoding, length, limit, callback) {
     ? ''
     : []
 
-  if(decoder){
-    decoder.on("data", function(chunk){
+  if(decoder) {
+    decoder.on('data', function(chunk) {
       buffer += chunk
     })
   }
@@ -255,8 +248,8 @@ function readStream (stream, encoding, length, limit, callback) {
         type: 'entity.too.large'
       }))
     } else if (decoder) {
-      if(!decoder.write(chunk)){
-        done(createError(400, 'unable to decode', { type: 'unable.to.decode'}))
+      if (!decoder.write(chunk)) {
+        done(createError(400, 'unable to decode', { type: 'unable.to.decode' }))
       }
     } else {
       buffer.push(chunk)
