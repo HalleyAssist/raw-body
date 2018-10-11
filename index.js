@@ -38,7 +38,7 @@ function getDecoder (encoding) {
     return new iconv.Iconv(encoding, 'UTF-8') // iconv.getDecoder(encoding)
   } catch (e) {
     // error getting decoder
-    //if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
+    // if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
 
     // the encoding was not found
     throw createError(415, 'specified encoding unsupported', {
@@ -179,8 +179,8 @@ function readStream (stream, encoding, length, limit, callback) {
     ? ''
     : []
 
-  if(decoder) {
-    decoder.on('data', function(chunk) {
+  if (decoder) {
+    decoder.on('data', function (chunk) {
       buffer += chunk
     })
   }
