@@ -14,7 +14,6 @@
 
 var bytes = require('bytes')
 var createError = require('http-errors')
-var iconv = require('iconv')
 var unpipe = require('unpipe')
 
 /**
@@ -23,30 +22,6 @@ var unpipe = require('unpipe')
  */
 
 module.exports = getRawBody
-
-/**
- * Get the decoder for a given encoding.
- *
- * @param {string} encoding
- * @private
- */
-
-function getDecoder (encoding) {
-  if (!encoding) return null
-
-  try {
-    return new iconv.Iconv(encoding, 'UTF-8') // iconv.getDecoder(encoding)
-  } catch (e) {
-    // error getting decoder
-    // if (!ICONV_ENCODING_MESSAGE_REGEXP.test(e.message)) throw e
-
-    // the encoding was not found
-    throw createError(415, 'specified encoding unsupported', {
-      encoding: encoding,
-      type: 'encoding.unsupported'
-    })
-  }
-}
 
 /**
  * Get the raw body of a stream (typically HTTP).
@@ -167,23 +142,8 @@ function readStream (stream, encoding, length, limit, callback) {
   }
 
   var received = 0
-  var decoder
 
-  try {
-    decoder = getDecoder(encoding)
-  } catch (err) {
-    return done(err)
-  }
-
-  var buffer = decoder
-    ? ''
-    : []
-
-  if (decoder) {
-    decoder.on('data', function (chunk) {
-      buffer += chunk
-    })
-  }
+  var buffer = []
 
   // attach listeners
   stream.on('aborted', onAborted)
@@ -247,10 +207,6 @@ function readStream (stream, encoding, length, limit, callback) {
         received: received,
         type: 'entity.too.large'
       }))
-    } else if (decoder) {
-      if (!decoder.write(chunk)) {
-        done(createError(400, 'unable to decode', { type: 'unable.to.decode' }))
-      }
     } else {
       buffer.push(chunk)
     }
@@ -268,9 +224,7 @@ function readStream (stream, encoding, length, limit, callback) {
         type: 'request.size.invalid'
       }))
     } else {
-      var string = decoder
-        ? buffer + (decoder.end() || '')
-        : Buffer.concat(buffer)
+      var string = Buffer.concat(buffer)
       done(null, string)
     }
   }
