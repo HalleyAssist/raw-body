@@ -12,7 +12,6 @@
   "dependencies": {
     "bytes": "3.0.0",
     "http-errors": "1.6.3",
-    "iconv": "git+https://github.com/HalleyAssist/node-iconv.git",
     "unpipe": "1.0.0"
   },
   "devDependencies": {
