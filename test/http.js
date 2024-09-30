@@ -19,7 +19,7 @@ describe('using http streams', function () {
 
     server.listen(function onListen () {
       var addr = server.address()
-      var client = http.request({method: 'POST', port: addr.port})
+      var client = http.request({ method: 'POST', port: addr.port })
 
       client.end('hello, world!')
 
@@ -27,7 +27,7 @@ describe('using http streams', function () {
         getRawBody(res, { encoding: true }, function (err, str) {
           server.close(function onClose () {
             assert.ifError(err)
-            assert.equal(str, 'hello, world!')
+            assert.strictEqual(str, 'hello, world!')
             done()
           })
         })
@@ -51,7 +51,7 @@ describe('using http streams', function () {
 
     server.listen(function onListen () {
       var addr = server.address()
-      var client = http.request({method: 'POST', port: addr.port})
+      var client = http.request({ method: 'POST', port: addr.port })
 
       client.end('hello, world!')
 
@@ -59,7 +59,47 @@ describe('using http streams', function () {
         getRawBody(res, { encoding: true }, function (err, str) {
           server.close(function onClose () {
             assert.ifError(err)
-            assert.equal(str, 'stream encoding should not be set')
+            assert.strictEqual(str, 'stream encoding should not be set')
+            done()
+          })
+        })
+      })
+    })
+  })
+
+  it('should throw if stream is not readable', function (done) {
+    var server = http.createServer(function onRequest (req, res) {
+      getRawBody(req, { length: req.headers['content-length'] }, function (err) {
+        if (err) {
+          req.resume()
+          res.statusCode = 500
+          res.end(err.message)
+          return
+        }
+
+        getRawBody(req, { length: req.headers['content-length'] }, function (err) {
+          if (err) {
+            res.statusCode = 500
+            res.end('[' + err.type + '] ' + err.message)
+          } else {
+            res.statusCode = 200
+            res.end()
+          }
+        })
+      })
+    })
+
+    server.listen(function onListen () {
+      var addr = server.address()
+      var client = http.request({ method: 'POST', port: addr.port })
+
+      client.end('hello, world!')
+
+      client.on('response', function onResponse (res) {
+        getRawBody(res, { encoding: true }, function (err, str) {
+          server.close(function onClose () {
+            assert.ifError(err)
+            assert.strictEqual(str, '[stream.not.readable] stream is not readable')
             done()
           })
         })
@@ -73,12 +113,12 @@ describe('using http streams', function () {
       getRawBody(req, { length: req.headers['content-length'] }, function (err, body) {
         server.close()
         assert.ok(err)
-        assert.equal(err.code, 'ECONNABORTED')
-        assert.equal(err.expected, 50)
-        assert.equal(err.message, 'request aborted')
-        assert.equal(err.received, 10)
-        assert.equal(err.status, 400)
-        assert.equal(err.type, 'request.aborted')
+        assert.strictEqual(err.code, 'ECONNABORTED')
+        assert.strictEqual(err.expected, 50)
+        assert.strictEqual(err.message, 'request aborted')
+        assert.strictEqual(err.received, 10)
+        assert.strictEqual(err.status, 400)
+        assert.strictEqual(err.type, 'request.aborted')
         done()
       })
 

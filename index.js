@@ -1,7 +1,7 @@
 /*!
  * raw-body
  * Copyright(c) 2013-2014 Jonathan Ong
- * Copyright(c) 2014-2015 Douglas Christopher Wilson
+ * Copyright(c) 2014-2022 Douglas Christopher Wilson
  * MIT Licensed
  */
 
@@ -12,6 +12,7 @@
  * @private
  */
 
+var asyncHooks = tryRequireAsyncHooks()
 var bytes = require('bytes')
 var createError = require('http-errors')
 var unpipe = require('unpipe')
@@ -35,6 +36,13 @@ module.exports = getRawBody
 function getRawBody (stream, options, callback) {
   var done = callback
   var opts = options || {}
+
+  // light validation
+  if (stream === undefined) {
+    throw new TypeError('argument stream is required')
+  } else if (typeof stream !== 'object' || stream === null || typeof stream.on !== 'function') {
+    throw new TypeError('argument stream must be a stream')
+  }
 
   if (options === true || typeof options === 'string') {
     // short cut for encoding
@@ -73,7 +81,7 @@ function getRawBody (stream, options, callback) {
 
   if (done) {
     // classic callback style
-    return readStream(stream, encoding, length, limit, done)
+    return readStream(stream, encoding, length, limit, wrap(done))
   }
 
   return new Promise(function executor (resolve, reject) {
@@ -138,6 +146,12 @@ function readStream (stream, encoding, length, limit, callback) {
     // developer error
     return done(createError(500, 'stream encoding should not be set', {
       type: 'stream.encoding.set'
+    }))
+  }
+
+  if (typeof stream.readable !== 'undefined' && !stream.readable) {
+    return done(createError(500, 'stream is not readable', {
+      type: 'stream.not.readable'
     }))
   }
 
@@ -238,4 +252,40 @@ function readStream (stream, encoding, length, limit, callback) {
     stream.removeListener('error', onEnd)
     stream.removeListener('close', cleanup)
   }
+}
+
+/**
+ * Try to require async_hooks
+ * @private
+ */
+
+function tryRequireAsyncHooks () {
+  try {
+    return require('async_hooks')
+  } catch (e) {
+    return {}
+  }
+}
+
+/**
+ * Wrap function with async resource, if possible.
+ * AsyncResource.bind static method backported.
+ * @private
+ */
+
+function wrap (fn) {
+  var res
+
+  // create anonymous resource
+  if (asyncHooks.AsyncResource) {
+    res = new asyncHooks.AsyncResource(fn.name || 'bound-anonymous-fn')
+  }
+
+  // incompatible node.js
+  if (!res || !res.runInAsyncScope) {
+    return fn
+  }
+
+  // return bound function
+  return res.runInAsyncScope.bind(res, fn, null)
 }

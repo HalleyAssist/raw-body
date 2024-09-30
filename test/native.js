@@ -10,7 +10,7 @@ run('using native streams', function () {
 
     getRawBody(stream, function (err, buf) {
       assert.ifError(err)
-      assert.equal(buf.toString(), 'hello, streams!')
+      assert.strictEqual(buf.toString(), 'hello, streams!')
       done()
     })
   })
@@ -21,7 +21,7 @@ run('using native streams', function () {
 
     getRawBody(stream, function (err, buf) {
       assert.ifError(err)
-      assert.equal(buf.toString(), 'oh, hello, streams!')
+      assert.strictEqual(buf.toString(), 'oh, hello, streams!')
       done()
     })
   })
@@ -31,9 +31,24 @@ run('using native streams', function () {
 
     getRawBody(stream, { limit: 2 }, function (err, buf) {
       assert.ok(err)
-      assert.equal(err.status, 413)
-      assert.equal(err.limit, 2)
+      assert.strictEqual(err.status, 413)
+      assert.strictEqual(err.limit, 2)
       process.nextTick(done)
+    })
+  })
+
+  it('should throw if stream is not readable', function (done) {
+    var stream = createStream(Buffer.from('hello, streams!'))
+
+    stream.resume()
+    stream.on('end', function () {
+      getRawBody(stream, function (err) {
+        assert.ok(err)
+        assert.strictEqual(err.status, 500)
+        assert.strictEqual(err.type, 'stream.not.readable')
+        assert.strictEqual(err.message, 'stream is not readable')
+        process.nextTick(done)
+      })
     })
   })
 })
